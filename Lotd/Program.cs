@@ -30,19 +30,42 @@ namespace Lotd
                 NativeScriptCompiler.CompileIfChanged();
             }
 
-            Dictionary<GameVersion, string> installedVersions = new Dictionary<GameVersion, string>();
-            foreach (GameVersion version in Enum.GetValues(typeof(GameVersion)))
+            // Group unique dirs first, then detect actual version from each via data files
+            Dictionary<string, GameVersion> uniqueDirsToVersion = new Dictionary<string, GameVersion>();
+            foreach (GameVersion candidateVersion in Enum.GetValues(typeof(GameVersion)))
             {
-                if (version == GameVersion.LinkEvolution1)
+                if (candidateVersion == GameVersion.LinkEvolution1)
                 {
                     continue;
                 }
-                string dir = LotdArchive.GetInstallDirectory(version);
-                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                string dir = LotdArchive.GetInstallDirectory(candidateVersion);  // Still uses override if set
+                if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir) && !uniqueDirsToVersion.ContainsKey(dir))
                 {
-                    installedVersions[version] = dir;
+                    // Detect actual version from core data files in this dir
+                    string datLotd = Path.Combine(dir, "YGO_DATA.dat");
+                    string tocLotd = Path.Combine(dir, "YGO_DATA.toc");
+                    string datLe = Path.Combine(dir, "YGO_2020.dat");
+                    string tocLe = Path.Combine(dir, "YGO_2020.toc");
+
+                    GameVersion detectedVersion;
+                    if (File.Exists(datLotd) && File.Exists(tocLotd))
+                    {
+                        detectedVersion = GameVersion.Lotd;
+                    }
+                    else if (File.Exists(datLe) && File.Exists(tocLe))
+                    {
+                        detectedVersion = GameVersion.LinkEvolution2;
+                    }
+                    else
+                    {
+                        // Fallback: No clear files; use candidate (handles rare incomplete dirs)
+                        detectedVersion = candidateVersion;
+                    }
+                    uniqueDirsToVersion[dir] = detectedVersion;
                 }
             }
+
+            Dictionary<GameVersion, string> installedVersions = uniqueDirsToVersion.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
 
             if (installedVersions.Count == 0)
             {
@@ -234,6 +257,24 @@ namespace Lotd
             LotdArchive archive = new LotdArchive(version);
             archive.Load();
             archive.Dump("Dump");
+        }
+        public static string GetIniValue(string filePath, string key)
+        {
+            if (!File.Exists(filePath)) return null;
+
+            string keyUpper = key.ToUpperInvariant();
+            foreach (string line in File.ReadAllLines(filePath))
+            {
+                string trimmed = line.Trim();
+                if (trimmed.StartsWith(";") || string.IsNullOrWhiteSpace(trimmed)) continue;  // Skip comments/empty
+
+                string[] parts = trimmed.Split(new char[] { '=' }, 2);  // Split on first '=' only
+                if (parts.Length == 2 && parts[0].Trim().ToUpperInvariant() == keyUpper)
+                {
+                    return parts[1].Trim();  // Return value, trimmed
+                }
+            }
+            return null;
         }
     }
 }

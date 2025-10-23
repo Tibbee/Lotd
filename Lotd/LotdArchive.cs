@@ -433,8 +433,15 @@ namespace Lotd
 
         public static string GetInstallDirectory(GameVersion version)
         {
-            string installDir = null;
+            // INI Config Override (new)
+            string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
+            string configInstallDir = Program.GetIniValue(configPath, "InstallDirectory");
+            if (!string.IsNullOrEmpty(configInstallDir) && Directory.Exists(configInstallDir))
+            {
+                return configInstallDir;  // Early return on success
+            }
 
+            string installDir = null;
             int appId = 0;
             string gameName = "";
             switch (version)

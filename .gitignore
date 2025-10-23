@@ -23,6 +23,8 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+.github/
+.vscode/
 
 !Lotd/FileFormats/[Bb]in
 Lotd/NativeScript/NativeScript.temp.c

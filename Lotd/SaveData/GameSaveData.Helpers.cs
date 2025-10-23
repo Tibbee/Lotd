@@ -218,9 +218,18 @@ namespace Lotd
 
         public static string GetSaveFilePath(GameVersion version)
         {
-            string installDir = LotdArchive.GetInstallDirectory(version);
+            string installDir = LotdArchive.GetInstallDirectory(version);  // Now respects INI for installDir
             if (!string.IsNullOrEmpty(installDir))
             {
+                // INI Config Override for Save Path (new)
+                string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
+                string configSavePath = Program.GetIniValue(configPath, "SaveFilePath");
+                if (!string.IsNullOrEmpty(configSavePath) && File.Exists(configSavePath))
+                {
+                    return Path.GetFullPath(configSavePath);  // Early return on direct override
+                }
+
+                // Existing Derivation Logic (unchanged)
                 try
                 {
                     int steamAppId = 0;

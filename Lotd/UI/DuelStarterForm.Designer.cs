@@ -285,7 +285,8 @@
             this.deckTypeComboBox.Items.AddRange(new object[] {
             "User",
             "Game",
-            "File"});
+            "File",
+            "Folder"});
             this.deckTypeComboBox.Location = new System.Drawing.Point(0, 49);
             this.deckTypeComboBox.Name = "deckTypeComboBox";
             this.deckTypeComboBox.Size = new System.Drawing.Size(217, 21);
