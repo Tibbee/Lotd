@@ -31,11 +31,12 @@ namespace Lotd.UI
 
         private MemTools.YdcDeck nextViewDeck;
         private DateTime lastViewDeck;
+        private bool[] isManualSlot = new bool[4];
 
         public DuelStarterForm()
         {
             InitializeComponent();
-
+            Array.Clear(isManualSlot, 0, 4);  // Reset all to false on new session
             animationsForm = new AnimationsForm();
 
             deckTypeComboBox.SelectedIndex = 0;            
@@ -84,6 +85,7 @@ namespace Lotd.UI
                {
                    ReloadDecks();
                });
+            Array.Clear(isManualSlot, 0, 4);   
             }
             catch
             {
@@ -166,7 +168,6 @@ namespace Lotd.UI
             }
 
             UpdateDecksList();
-            randomizeDeckCheckBox.Enabled = (availableDecksForRandom.Count > 1);  // Disable if <2 decks (trivial random)
         }
 
         private void reloadDecksButton_Click(object sender, EventArgs e)
@@ -240,7 +241,6 @@ namespace Lotd.UI
                 }
             }
             UpdateDecksList();
-            availableDecksForRandom.Clear();
         }
 
         private void exportDeckButton_Click(object sender, EventArgs e)
@@ -306,40 +306,50 @@ namespace Lotd.UI
 
         private void setPlayer1DeckButton_Click(object sender, EventArgs e)
         {
-            SetPlayerDeck(GetSelectedDeck(), 0, false);
+            SetPlayerDeck(GetSelectedDeck(), 0, false, true);  // <-- Add , true
         }
 
         private void setPlayer2DeckButton_Click(object sender, EventArgs e)
         {
-            SetPlayerDeck(GetSelectedDeck(), 1, false);
+            SetPlayerDeck(GetSelectedDeck(), 1, false, true);
         }
 
         private void setPlayer3Button_Click(object sender, EventArgs e)
         {
-            SetPlayerDeck(GetSelectedDeck(), 2, false);
+            SetPlayerDeck(GetSelectedDeck(), 2, false, true);
         }
 
         private void setPlayer4Button_Click(object sender, EventArgs e)
         {
-            SetPlayerDeck(GetSelectedDeck(), 3, false);
+            SetPlayerDeck(GetSelectedDeck(), 3, false, true);
         }
 
         private void clearPlayerDecksButton_Click(object sender, EventArgs e)
         {
-            SetPlayerDeck(default(MemTools.YdcDeck), 0, true);
-            SetPlayerDeck(default(MemTools.YdcDeck), 1, true);
-            SetPlayerDeck(default(MemTools.YdcDeck), 2, true);
-            SetPlayerDeck(default(MemTools.YdcDeck), 3, true);
+            SetPlayerDeck(default(MemTools.YdcDeck), 0, true, false);
+            isManualSlot[0] = false;  // Reset flag for re-randomization
+
+            SetPlayerDeck(default(MemTools.YdcDeck), 1, true, false);
+            isManualSlot[1] = false;  // Reset flag for re-randomization
+
+            SetPlayerDeck(default(MemTools.YdcDeck), 2, true, false);
+            isManualSlot[2] = false;  // Reset flag for re-randomization
+
+            SetPlayerDeck(default(MemTools.YdcDeck), 3, true, false);
+            isManualSlot[3] = false;  // Reset flag for re-randomization
         }
 
-        private void SetPlayerDeck(MemTools.YdcDeck deck, int playerIndex, bool allowNull)
+        private void SetPlayerDeck(MemTools.YdcDeck deck, int playerIndex, bool allowNull, bool setManualFlag = true)
         {
             if (!allowNull && deck.Equals(default(MemTools.YdcDeck)))
             {
                 return;
             }
-
             playerDecks[playerIndex] = deck;
+            if (!deck.Equals(default(MemTools.YdcDeck)) && setManualFlag)  // <-- Updated: Guard with param
+            {
+                isManualSlot[playerIndex] = true;
+            }
             switch (playerIndex)
             {
                 case 0:
@@ -490,6 +500,7 @@ namespace Lotd.UI
             }
             availableDecksForRandom.Clear();
             availableDecksForRandom.AddRange(decksListBox.Items.Cast<YdcDeckWrapper>().Select(wrapper => wrapper.Deck));
+            randomizeDeckCheckBox.Enabled = (availableDecksForRandom.Count > 1);
             decksListBox.EndUpdate();
         }
 
@@ -574,55 +585,57 @@ namespace Lotd.UI
             startDuelInfo.SetAvatarId(MemTools.Player.TagOpponent, playerDecks[3].DeckAvatarId);
 
             if (randomizeDeckCheckBox.Checked && availableDecksForRandom.Count > 0)
-            {
-                if (availableDecksForRandom.Count == 0)
                 {
-                    MessageBox.Show("No decks available for randomization.", "Random Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;  // Bail out—no duel start
-                }
-
-                for (int slot = 0; slot < 4; slot++)
-                {
-                    // Per-slot reseed for independent randomness
-                    var slotRand = new Random((int)DateTime.Now.Ticks + slot * 1000);  // + offset for variance
-                    MemTools.YdcDeck randomDeck = default(MemTools.YdcDeck);
-                    int tries = 0;
-                    while (tries < 3)
+                    if (availableDecksForRandom.Count == 0)
                     {
-                        randomDeck = availableDecksForRandom[slotRand.Next(availableDecksForRandom.Count)];
-                        try
+                        MessageBox.Show("No decks available for randomization.", "Random Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    for (int slot = 0; slot < 4; slot++)
+                    {
+                        // Flag: Skip only true manuals; randomize cleared or previous randoms
+                        if (isManualSlot[slot])
                         {
-                            // Validate (mirrors ReloadDecks: must be valid and complete)
-                            if (randomDeck.IsValid && randomDeck.IsDeckComplete)
+                            continue;  // Respect manual
+                        }
+
+                        // Only randomize cleared slots
+                        var slotRand = new Random((int)DateTime.Now.Ticks + slot * 1000);
+                        MemTools.YdcDeck randomDeck = default(MemTools.YdcDeck);
+                        int tries = 0;
+                        while (tries < 3)
+                        {
+                            randomDeck = availableDecksForRandom[slotRand.Next(availableDecksForRandom.Count)];
+                            try
                             {
-                                break;
+                                if (randomDeck.IsValid && randomDeck.IsDeckComplete)
+                                {
+                                    break;
+                                }
+                            }
+                            catch { }
+                            tries++;
+                        }
+
+                        if (tries < 3)
+                        {
+                            playerDecks[slot] = randomDeck;
+                            isManualSlot[slot] = false;  // Flag as randomized
+                        }
+                        else
+                        {
+                            randomDeck = availableDecksForRandom.FirstOrDefault(d => d.IsValid && d.IsDeckComplete);
+                            playerDecks[slot] = randomDeck;
+                            isManualSlot[slot] = false;  // Still flag as randomized (even on fallback)
+                            if (randomDeck.Equals(default(MemTools.YdcDeck)))
+                            {
+                                MessageBox.Show($"Could not randomize slot {slot + 1}.", "Random Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                             }
                         }
-                        catch
-                        {
-                            // Rare: Retry on any error
-                        }
-                        tries++;
-                    }
 
-                    if (tries < 3)
-                    {
-                        playerDecks[slot] = randomDeck;
+                        SetPlayerDeck(playerDecks[slot], slot, false, false);  // Update label for cleared slots
                     }
-                    else
-                    {
-                        // Fallback: Use first valid from list
-                        randomDeck = availableDecksForRandom.FirstOrDefault(d => d.IsValid && d.IsDeckComplete);
-                        playerDecks[slot] = randomDeck;
-                        if (randomDeck.Equals(default(MemTools.YdcDeck)))
-                        {
-                            MessageBox.Show($"Could not randomize slot {slot + 1} (using game default).", "Random Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        }
-                    }
-
-                    // Auto-update label for UX (no manual selection needed)
-                    SetPlayerDeck(playerDecks[slot], slot, false);
-                }
                 // randomizeDeckCheckBox.Checked = false;  // Auto-uncheck after use (optional; prevents repeat)
             }
 
