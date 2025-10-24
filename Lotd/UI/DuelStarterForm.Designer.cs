@@ -36,6 +36,7 @@
             this.deckFilterTextBox = new System.Windows.Forms.TextBox();
             this.playerDeckButtonsPanel = new System.Windows.Forms.Panel();
             this.clearPlayerDecksButton = new System.Windows.Forms.Button();
+            this.randomizeDeckCheckBox = new System.Windows.Forms.CheckBox();
             this.setPlayer4Button = new System.Windows.Forms.Button();
             this.setPlayer3Button = new System.Windows.Forms.Button();
             this.setPlayer2DeckButton = new System.Windows.Forms.Button();
@@ -141,7 +142,7 @@
             this.decksListPanel1.Dock = System.Windows.Forms.DockStyle.Left;
             this.decksListPanel1.Location = new System.Drawing.Point(0, 0);
             this.decksListPanel1.Name = "decksListPanel1";
-            this.decksListPanel1.Size = new System.Drawing.Size(217, 490);
+            this.decksListPanel1.Size = new System.Drawing.Size(350, 490);
             this.decksListPanel1.TabIndex = 6;
             // 
             // deckFilterTextBox
@@ -154,7 +155,8 @@
             this.deckFilterTextBox.TextChanged += new System.EventHandler(this.deckFilterTextBox_TextChanged);
             // 
             // playerDeckButtonsPanel
-            // 
+            //
+            this.playerDeckButtonsPanel.Controls.Add(this.randomizeDeckCheckBox); 
             this.playerDeckButtonsPanel.Controls.Add(this.clearPlayerDecksButton);
             this.playerDeckButtonsPanel.Controls.Add(this.setPlayer4Button);
             this.playerDeckButtonsPanel.Controls.Add(this.setPlayer3Button);
@@ -176,6 +178,17 @@
             this.clearPlayerDecksButton.Text = "Clear";
             this.clearPlayerDecksButton.UseVisualStyleBackColor = true;
             this.clearPlayerDecksButton.Click += new System.EventHandler(this.clearPlayerDecksButton_Click);
+            //
+            // randomizeDeck checkbox
+            //
+            this.randomizeDeckCheckBox.AutoSize = true;
+            this.randomizeDeckCheckBox.Dock = System.Windows.Forms.DockStyle.Left;
+            this.randomizeDeckCheckBox.Location = new System.Drawing.Point(220, 0);
+            this.randomizeDeckCheckBox.Name = "randomizeDeckCheckBox";
+            this.randomizeDeckCheckBox.Size = new System.Drawing.Size(74, 23);
+            this.randomizeDeckCheckBox.TabIndex = 41;
+            this.randomizeDeckCheckBox.Text = "Randomize Deck";
+            this.randomizeDeckCheckBox.UseVisualStyleBackColor = true;
             // 
             // setPlayer4Button
             // 
@@ -792,7 +805,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(495, 490);
+            this.ClientSize = new System.Drawing.Size(800, 600);
             this.Controls.Add(this.duelSettingsPanel);
             this.Controls.Add(this.setsDecksPanel);
             this.Controls.Add(this.decksListPanel1);
@@ -849,6 +862,7 @@
         private System.Windows.Forms.Timer viewDeckDelayTimer;
         private System.Windows.Forms.ComboBox startingPlayerComboBox;
         private System.Windows.Forms.Button clearPlayerDecksButton;
+        private System.Windows.Forms.CheckBox randomizeDeckCheckBox;
         private System.Windows.Forms.CheckBox fullReloadCheckBox;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Label label2;

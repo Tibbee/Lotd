@@ -223,10 +223,10 @@ namespace Lotd
             {
                 // INI Config Override for Save Path (new)
                 string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
-                string configSavePath = Program.GetIniValue(configPath, "SaveFilePath");
-                if (!string.IsNullOrEmpty(configSavePath) && File.Exists(configSavePath))
+                string configSavePath = Program.NormalizePath(AppDomain.CurrentDomain.BaseDirectory, Program.GetIniValue(configPath, "SaveFilePath"));
+                if (!string.IsNullOrEmpty(configSavePath))  // File.Exists now via full path
                 {
-                    return Path.GetFullPath(configSavePath);  // Early return on direct override
+                    return configSavePath;
                 }
 
                 // Existing Derivation Logic (unchanged)

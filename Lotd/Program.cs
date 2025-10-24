@@ -276,5 +276,14 @@ namespace Lotd
             }
             return null;
         }
+        public static string NormalizePath(string baseDir, string value, bool isDirectory = false)
+        {
+            if (string.IsNullOrEmpty(value)) return null;
+            value = value.Trim().Trim('"');  // Also strip optional quotes for paths
+            if (Path.IsPathRooted(value)) return Path.GetFullPath(value);  // Already absolute
+            string fullPath = Path.GetFullPath(Path.Combine(baseDir, value));
+            if (isDirectory && !Directory.Exists(fullPath)) return null;  // Optional: Early invalidation
+            return fullPath;
+        }
     }
 }

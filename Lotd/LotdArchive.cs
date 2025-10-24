@@ -435,10 +435,10 @@ namespace Lotd
         {
             // INI Config Override (new)
             string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
-            string configInstallDir = Program.GetIniValue(configPath, "InstallDirectory");
-            if (!string.IsNullOrEmpty(configInstallDir) && Directory.Exists(configInstallDir))
+            string configInstallDir = Program.NormalizePath(AppDomain.CurrentDomain.BaseDirectory, Program.GetIniValue(configPath, "InstallDirectory"), isDirectory: true);
+            if (!string.IsNullOrEmpty(configInstallDir))  // Exists check now in NormalizePath
             {
-                return configInstallDir;  // Early return on success
+                return configInstallDir;
             }
 
             string installDir = null;
