@@ -33,6 +33,9 @@ namespace Lotd.UI
         private DateTime lastViewDeck;
         private bool[] isManualSlot = new bool[4];
 
+        private List<MemTools.YdcDeck> folderDecks = new List<MemTools.YdcDeck>();
+        private string selectedFolderPath = string.Empty;
+
         public DuelStarterForm()
         {
             InitializeComponent();
@@ -156,9 +159,8 @@ namespace Lotd.UI
             {
                 return;
             }
-
             if (deckTypeComboBox.SelectedIndex == 0)
-            {                
+            {
                 MemTools.YdcDeck[] uDecks = Program.MemTools.ReadUserDecks();
                 if (uDecks != null)
                 {
@@ -166,8 +168,62 @@ namespace Lotd.UI
                     userDecks.AddRange(uDecks);
                 }
             }
-
+            else if (deckTypeComboBox.SelectedIndex == 3)  // New: Folder
+            {
+                if (string.IsNullOrEmpty(selectedFolderPath) || !Directory.Exists(selectedFolderPath))
+                {
+                    using (var dialog = new FolderBrowserDialog())
+                    {
+                        dialog.Description = "Select a folder containing deck files (.ydl or .ydk)";
+                        dialog.ShowNewFolderButton = false;  // Optional: Prevent creating new
+                        if (dialog.ShowDialog() == DialogResult.OK)
+                        {
+                            selectedFolderPath = dialog.SelectedPath;
+                            LoadFolderDecks();  // New method call
+                        }
+                        else
+                        {
+                            // Revert to previous if canceled
+                            deckTypeComboBox.SelectedIndex = 2;  // Or 0; adjust as needed
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    LoadFolderDecks();  // Reload if path exists but changed
+                }
+            }
+            // Dynamic button control
+            changeFolderButton.Enabled = (deckTypeComboBox.SelectedIndex == 3);
+            changeFolderButton.Visible = (deckTypeComboBox.SelectedIndex == 3);  // Or just Enabled if you prefer grayed-out
+            if (deckTypeComboBox.SelectedIndex == 3 && !string.IsNullOrEmpty(selectedFolderPath))
+            {
+                changeFolderButton.Text = "Change Folder (" + Path.GetFileName(selectedFolderPath) + ")";  // Optional: Show current dir name
+            }
+            else
+            {
+                changeFolderButton.Text = "Change Folder";
+            }
             UpdateDecksList();
+        }
+
+        private void changeFolderButton_Click(object sender, EventArgs e)
+        {
+            using (var dialog = new FolderBrowserDialog())
+            {
+                dialog.Description = "Select a folder containing deck files (.ydl or .ydk)";
+                dialog.ShowNewFolderButton = false;
+                dialog.SelectedPath = selectedFolderPath;  // Start from current for convenience
+
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    selectedFolderPath = dialog.SelectedPath;
+                    LoadFolderDecks();  // Reload with new path
+                    UpdateDecksList();  // Refresh UI
+                }
+                // Else: Canceled—do nothing (path unchanged)
+            }
         }
 
         private void reloadDecksButton_Click(object sender, EventArgs e)
@@ -241,6 +297,63 @@ namespace Lotd.UI
                 }
             }
             UpdateDecksList();
+        }
+
+        private void LoadFolderDecks()
+        {
+            if (string.IsNullOrEmpty(selectedFolderPath) || !Directory.Exists(selectedFolderPath))
+            {
+                folderDecks.Clear();
+                MessageBox.Show("Invalid or empty folder selected. No decks loaded.", "Folder Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            folderDecks.Clear();
+            try
+            {
+                // Load .ydl (binary)
+                foreach (string file in Directory.GetFiles(selectedFolderPath, "*" + deckFilesExtension))
+                {
+                    try
+                    {
+                        byte[] buffer = File.ReadAllBytes(file);
+                        if (buffer.Length != System.Runtime.InteropServices.Marshal.SizeOf(typeof(MemTools.YdcDeck)))
+                        {
+                            continue;
+                        }
+                        MemTools.YdcDeck deck = MemTools.StructFromByteArray<MemTools.YdcDeck>(buffer);
+                        if (deck.IsValid)
+                        {
+                            folderDecks.Add(deck);
+                        }
+                    }
+                    catch { }
+                }
+
+                // Load .ydk (text)
+                foreach (string file in Directory.GetFiles(selectedFolderPath, "*" + YdkHelper.FileExtension))
+                {
+                    try
+                    {
+                        MemTools.YdcDeck deck = YdkHelper.LoadDeck(file);
+                        if (deck.IsValid)
+                        {
+                            folderDecks.Add(deck);
+                        }
+                    }
+                    catch { }
+                }
+
+                if (folderDecks.Count == 0)
+                {
+                    MessageBox.Show("No valid decks found in the selected folder.", "Folder Warning", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading folder decks: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                folderDecks.Clear();
+            }
         }
 
         private void exportDeckButton_Click(object sender, EventArgs e)
@@ -411,6 +524,9 @@ namespace Lotd.UI
                     break;
                 case 2:
                     decks = fileDecks;
+                    break;
+                case 3:
+                    decks = folderDecks;
                     break;
             }
             if (decks != null)

@@ -47,6 +47,7 @@
             this.exportDeckButton = new System.Windows.Forms.Button();
             this.reloadDecksButton = new System.Windows.Forms.Button();
             this.deckTypeComboBox = new System.Windows.Forms.ComboBox();
+            this.changeFolderButton = new System.Windows.Forms.Button();
             this.deckFilterPanel = new System.Windows.Forms.Panel();
             this.filterDeckRitualCheckBox = new System.Windows.Forms.CheckBox();
             this.filterDeckXyzCheckBox = new System.Windows.Forms.CheckBox();
@@ -240,6 +241,7 @@
             this.panel1.Controls.Add(this.viewDeckButton);
             this.panel1.Controls.Add(this.exportDeckButton);
             this.panel1.Controls.Add(this.reloadDecksButton);
+            this.panel1.Controls.Add(this.changeFolderButton);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 70);
             this.panel1.Name = "panel1";
@@ -289,6 +291,19 @@
             this.reloadDecksButton.Text = "Reload";
             this.reloadDecksButton.UseVisualStyleBackColor = true;
             this.reloadDecksButton.Click += new System.EventHandler(this.reloadDecksButton_Click);
+            //
+            // changeFolderButton
+            //
+            this.changeFolderButton.Dock = System.Windows.Forms.DockStyle.Left;
+            this.changeFolderButton.Enabled = false;
+            this.changeFolderButton.Location = new System.Drawing.Point(53, 0);  // Temp: After reload (x=53); docking overrides
+            this.changeFolderButton.Name = "changeFolderButton";
+            this.changeFolderButton.Size = new System.Drawing.Size(90, 23);  // Compact to fit after reload
+            this.changeFolderButton.TabIndex = 42;
+            this.changeFolderButton.Text = "Change Folder";
+            this.changeFolderButton.UseVisualStyleBackColor = true;
+            this.changeFolderButton.Visible = false;  // Starts hidden
+            this.changeFolderButton.Click += new System.EventHandler(this.changeFolderButton_Click);
             // 
             // deckTypeComboBox
             // 
@@ -300,7 +315,7 @@
             "Game",
             "File",
             "Folder"});
-            this.deckTypeComboBox.Location = new System.Drawing.Point(0, 49);
+            // this.deckTypeComboBox.Location = new System.Drawing.Point(0, 49);  // Let Dock=Top auto-position below filters
             this.deckTypeComboBox.Name = "deckTypeComboBox";
             this.deckTypeComboBox.Size = new System.Drawing.Size(217, 21);
             this.deckTypeComboBox.TabIndex = 8;
@@ -836,6 +851,7 @@
         private System.Windows.Forms.Panel decksListPanel1;
         private System.Windows.Forms.Button viewDeckButton;
         private System.Windows.Forms.ComboBox deckTypeComboBox;
+        private System.Windows.Forms.Button changeFolderButton;
         private System.Windows.Forms.Label player1DeckLabel;
         private System.Windows.Forms.ComboBox duelArenaComboBox;
         private System.Windows.Forms.CheckBox autoViewDeckCheckBox;
